@@ -1,0 +1,27 @@
+-- Dataset
+drop table emp_input;
+create table emp_input
+(
+id      int,
+name    varchar(40)
+);
+insert into emp_input values (1, 'Emp1');
+insert into emp_input values (2, 'Emp2');
+insert into emp_input values (3, 'Emp3');
+insert into emp_input values (4, 'Emp4');
+insert into emp_input values (5, 'Emp5');
+insert into emp_input values (6, 'Emp6');
+insert into emp_input values (7, 'Emp7');
+insert into emp_input values (8, 'Emp8');
+
+select * from emp_input;
+
+
+
+-- Solution in PostgreSQL & Microsoft SQL Server:
+with cte as 
+			(select CONCAT(id, ' ' ,name) as result,ntile(4)over (order by name) as buckets
+			from emp_input)
+select STRING_AGG(result,',') as result
+from cte
+group by buckets

@@ -1,0 +1,19 @@
+probleme statment link : https://leetcode.com/problems/tree-node/
+Table creation :
+CREATE TABLE tree (
+  id INT,
+  p_id INT
+);
+Insert values :
+INSERT INTO your_table (id, p_id)
+VALUES (1, null),
+       (2, 1),
+       (3, 1),
+       (4, 2),
+       (5, 2);
+Solution:
+
+select id,case when p_id is null then 'Root' 
+			  when id in (select p_id from tree) then 'Inner' 
+			  else 'leaf' end as Type
+from tree
