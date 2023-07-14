@@ -1,0 +1,41 @@
+with cte as
+		(select distinct t1.roll_number,t1.student_name,t1.class,t1.section,t1.school_name,
+			t2.question_paper_code,t2.question_number,t2.option_marked
+			,t3.correct_option
+		from student_list t1
+		join student_response t2 on t1.roll_number = t2.roll_number
+		join correct_answer t3 on t2.question_number =t3.question_number and t2.question_paper_code= t3.question_paper_code),
+cte1 as
+		(select *,sum(case when option_marked = correct_option and question_paper_code in (101,102,103) then 1 else 0 end)
+				over(partition by roll_number,question_paper_code order by student_name) as Math_correct
+				,sum(case when option_marked <> correct_option and option_marked <> 'e' and question_paper_code in (101,102,103) then 1 else 0 end)
+				over(partition by roll_number,question_paper_code order by student_name) as Math_wrong
+				,sum(case when option_marked = 'e' and question_paper_code in (101,102,103) then 1 else 0 end)
+				over(partition by roll_number,question_paper_code order by student_name) as Math_Not_yet_learn
+				-----
+				,sum(case when option_marked = correct_option and question_paper_code in (501,502,503) then 1 else 0 end)
+				over(partition by roll_number,question_paper_code order by student_name) as Science_correct
+				,sum(case when option_marked <> correct_option and option_marked <> 'e' and question_paper_code in (501,502,503) then 1 else 0 end)
+				over(partition by roll_number,question_paper_code order by student_name) as Science_wrong
+				,sum(case when option_marked = 'e' and question_paper_code in (501,502,503) then 1 else 0 end)
+				over(partition by roll_number,question_paper_code order by student_name) as Science_Not_yet_learn
+		from cte),
+cte2 as
+		(select distinct roll_number,student_name,class,section,school_name
+			  ,Math_correct,Math_wrong,Math_Not_yet_learn
+			  ,round(cast(Math_correct as float)/count(question_number)over(partition by roll_number,question_paper_code order by student_name)*100 
+			  ,2)as Math_percentage
+			  ,Science_correct,Science_wrong,Science_Not_yet_learn
+			  ,round(cast(Science_correct as float)/count(question_number)over(partition by roll_number,question_paper_code order by student_name)*100 
+			 ,2) as science_percentage
+		from cte1),
+cte3 as
+			(select *,ROW_NUMBER()over(partition by roll_number order by roll_number) as id 
+			from cte2)
+select distinct tab1.roll_number,tab1.student_name , tab1.class,tab1.section,tab1.school_name 
+			  ,tab2.Math_correct , tab2.Math_wrong , tab2.Math_Not_yet_learn , tab2.Math_correct as math_score,tab2.Math_percentage
+			  ,tab1.Science_correct , tab1.Science_wrong , tab1.Science_Not_yet_learn, tab1.Science_correct as Science_score, tab1.science_percentage
+from cte3 tab1
+join cte3 tab2
+on tab1.id < tab2.id and tab1.roll_number = tab2.roll_number
+
